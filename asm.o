@@ -1,0 +1,11 @@
+.code
+.global
+assembly proc
+
+mov rax, 1
+ret
+
+xor rax,  ax
+
+assembly endp
+end
