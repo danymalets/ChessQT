@@ -168,24 +168,9 @@ void Game::writeMoves()
     }
 }
 
-extern "C" bool is_valid_king_move(short x1, short y1, short x2, short y2);
-
-QString tostr(bool t){
-    return t?"1":"0";
-}
 
 void Game::on_pushButton_clicked()
 {
-    QString s =
-    tostr(is_valid_king_move(7,0,1,0)) +
-    tostr(is_valid_king_move(7,0,5,0)) +
-    tostr(is_valid_king_move(7,0,6,0)) +
-    tostr(is_valid_king_move(7,0,7,0)) +
-    tostr(is_valid_king_move(7,0,8,0)) +
-    tostr(is_valid_king_move(7,0,9,0)) +
-    tostr(is_valid_king_move(7,0,20,0));
-    ui->label_4->setText(s);
-    return;
     if (boards.size() > 1) {
         boards.pop();
         Figures pawnEnd = board->pawnEnd;

@@ -62,12 +62,12 @@ bool Board::isValidMove(Move m)
     case pawn:
         if (boardColors[m.x1][m.y1] == white)
             return (is_valid_white_pawn_move(m.x1, m.y1, m.x2, m.y2) &&
-                !isBarrier(m.x1, m.y1, m.x2, m.y2)) ||
+                !isBarrier(m.x1, m.y1, m.x2, m.y2) && boardFigures[m.x2][m.y2] == noFigure) ||
                 (abs(m.x2 - m.x1) == 1 && m.y1 - m.y2 == 1 && boardColors[m.x2][m.y2] == black) ||
                 (movePawn == m.x2 && abs(m.x1 - m.x2) == 1 && m.y1 == 3 && m.y2 == 2);
         else
             return (m.x2 == m.x1 && (m.y2 - m.y1 == 1 || (m.y2 - m.y1 == 2 && m.y1 == 1)) &&
-                    !isBarrier(m.x1, m.y1, m.x2, m.y2)) ||
+                    !isBarrier(m.x1, m.y1, m.x2, m.y2) && boardFigures[m.x2][m.y2] == noFigure) ||
                 (abs(m.x2 - m.x1) == 1 && m.y2 - m.y1 == 1 && boardColors[m.x2][m.y2] == white)||
                 (movePawn == m.x2 && abs(m.x1 - m.x2) == 1 && m.y1 == 4 && m.y2 == 5);
     default:
