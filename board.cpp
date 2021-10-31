@@ -16,6 +16,14 @@ Board::Board()
     }
 }
 
+extern "C" bool is_valid_king_move(short x1, short y1, short x2, short y2);
+extern "C" bool is_valid_queen_move(short x1, short y1, short x2, short y2);
+extern "C" bool is_valid_bishop_move(short x1, short y1, short x2, short y2);
+extern "C" bool is_valid_knight_move(short x1, short y1, short x2, short y2);
+extern "C" bool is_valid_rook_move(short x1, short y1, short x2, short y2);
+extern "C" bool is_valid_white_pawn_move(short x1, short y1, short x2, short y2);
+extern "C" bool is_valid_black_pawn_move(short x1, short y1, short x2, short y2);
+
 bool Board::isValidMove(Move m)
 {
     if (m.x2 < 0 || m.x2 >= 8 || m.y2 < 0 || m.y2 >= 8 || (m.x2 == m.x1 && m.y2 == m.y1)
@@ -23,7 +31,7 @@ bool Board::isValidMove(Move m)
             boardFigures[m.x1][m.y1] == noFigure) return false;
     switch (boardFigures[m.x1][m.y1]){
     case king:
-        return max(abs(m.x2 - m.x1), abs(m.y2 - m.y1)) == 1 ||
+        return is_valid_king_move(m.x1, m.y1, m.x2, m.y2) ||
                 (boardColors[m.x1][m.y1] == black && !blackKingWasMoving &&
                 !leftBlackRookWasMoving && m.x2 == 2 && m.y2 == 0 &&
                 boardFigures[1][0] == noFigure && boardFigures[2][0] == noFigure &&
@@ -43,26 +51,23 @@ bool Board::isValidMove(Move m)
                 boardFigures[5][7] == noFigure && boardFigures[6][7] == noFigure &&
                 !isCheckPoint(black, 4 , 7) && !isCheckPoint(black, 5, 7));
     case queen:
-        return (m.x1 == m.x2 || m.y1 == m.y2 || abs(m.x2 - m.x1) == abs(m.y2 - m.y1)) &&
+        return is_valid_queen_move(m.x1, m.y1, m.x2, m.y2) &&
                 !isBarrier(m.x1, m.y1, m.x2, m.y2);
     case rook:
-        return (m.x1 == m.x2 || m.y1 == m.y2) && !isBarrier(m.x1, m.y1, m.x2, m.y2);
+        return is_valid_rook_move(m.x1, m.y1, m.x2, m.y2) && !isBarrier(m.x1, m.y1, m.x2, m.y2);
     case knight:
-        return abs(m.x2 - m.x1) + abs(m.y2 - m.y1) == 3 &&
-                m.x2 != m.x1 && m.y2 != m.y1;
+        return  is_valid_knight_move(m.x1, m.y1, m.x2, m.y2);
     case bishop:
-        return abs(m.x2 - m.x1) == abs(m.y2 - m.y1) && !isBarrier(m.x1, m.y1, m.x2, m.y2);
+        return is_valid_bishop_move(m.x1, m.y1, m.x2, m.y2) && !isBarrier(m.x1, m.y1, m.x2, m.y2);
     case pawn:
         if (boardColors[m.x1][m.y1] == white)
-            return (m.x2 == m.x1 && (m.y1 - m.y2 == 1 || (m.y1 - m.y2 == 2 &&
-                boardFigures[m.x2][m.y2 + 1] == noFigure && m.y1 == 6))
-                && boardFigures[m.x2][m.y2] == noFigure) ||
+            return (is_valid_white_pawn_move(m.x1, m.y1, m.x2, m.y2) &&
+                !isBarrier(m.x1, m.y1, m.x2, m.y2)) ||
                 (abs(m.x2 - m.x1) == 1 && m.y1 - m.y2 == 1 && boardColors[m.x2][m.y2] == black) ||
                 (movePawn == m.x2 && abs(m.x1 - m.x2) == 1 && m.y1 == 3 && m.y2 == 2);
         else
-            return (m.x2 == m.x1 && (m.y2 - m.y1 == 1 || (m.y2 - m.y1 == 2 &&
-                boardFigures[m.x2][m.y2 - 1] == noFigure && m.y1 == 1))
-                && boardFigures[m.x2][m.y2] == noFigure) ||
+            return (m.x2 == m.x1 && (m.y2 - m.y1 == 1 || (m.y2 - m.y1 == 2 && m.y1 == 1)) &&
+                    !isBarrier(m.x1, m.y1, m.x2, m.y2)) ||
                 (abs(m.x2 - m.x1) == 1 && m.y2 - m.y1 == 1 && boardColors[m.x2][m.y2] == white)||
                 (movePawn == m.x2 && abs(m.x1 - m.x2) == 1 && m.y1 == 4 && m.y2 == 5);
     default:

@@ -34,7 +34,14 @@ nasm.output = ${QMAKE_FILE_BASE}.o
 nasm.commands = /usr/local/bin/nasm -fmacho64 -g -F dwarf -o ${QMAKE_FILE_BASE}.o ${QMAKE_FILE_NAME}
 nasm.input = NASM_SOURCES
 
-NASM_SOURCES = test.asm
+NASM_SOURCES += \
+    king.asm \
+    queen.asm \
+    bishop.asm \
+    knight.asm \
+    rook.asm \
+    white_pawn.asm \
+    black_pawn.asm
 
 FORMS += \
     game.ui
@@ -42,7 +49,13 @@ FORMS += \
 
 
 DISTFILES += \
-    test.asm
+    king.asm \
+    queen.asm \
+    bishop.asm \
+    knight.asm \
+    rook.asm \
+    white_pawn.asm \
+    black_pawn.asm
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
