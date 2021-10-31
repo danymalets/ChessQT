@@ -1,6 +1,5 @@
 #include "game.h"
 #include "ui_game.h"
-#include "stdafx.h"
 #include<iostream>
 
 Game::Game(QWidget *parent): QMainWindow(parent), ui(new Ui::Game)
@@ -169,13 +168,13 @@ void Game::writeMoves()
     }
 }
 
-extern "C" __int64 assembly();
+extern "C" long long __cdecl asm_function(long long t);
 
 void Game::on_pushButton_clicked()
 {
-    long long t = assembly();
-    QString s = QString::number(13);
-    ui->label_2->setText(s);
+    int t = asm_function(6);
+    QString s = QString::number(t);
+    ui->label_4->setText(s);
     return;
     if (boards.size() > 1) {
         boards.pop();

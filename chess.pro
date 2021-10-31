@@ -27,21 +27,22 @@ HEADERS += \
     game.h
 
 
+QMAKE_EXTRA_COMPILERS += nasm
+NASMEXTRAFLAGS = -f elf64 -g -F dwarf
+OTHER_FILES += $$NASM_SOURCES
+nasm.output = ${QMAKE_FILE_BASE}.o
+nasm.commands = /usr/local/bin/nasm -fmacho64 -g -F dwarf -o ${QMAKE_FILE_BASE}.o ${QMAKE_FILE_NAME}
+nasm.input = NASM_SOURCES
+
+NASM_SOURCES = test.asm
 
 FORMS += \
     game.ui
 
-nasm.name = nasm ${QMAKE_FILE_IN}
-nasm.input = ASM_FILES
-nasm.variable_out = OBJECTS
-nasm.commands = nasm -f win64 ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
-nasm.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_IN_BASE}$${first(QMAKE_EXT_OBJ)}
-nasm.CONFIG += target_predeps
 
-QMAKE_EXTRA_COMPILERS  += nasm
 
-ASM_FILES += asm.o
-
+DISTFILES += \
+    test.asm
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
