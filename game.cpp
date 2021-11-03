@@ -1,6 +1,18 @@
 #include "game.h"
 #include "ui_game.h"
+#include <QFile>
+#include <QProcess>
 #include<iostream>
+
+#include <QCloseEvent>
+
+QString CONNECT_1 = "cnct1";
+QString CONNECT_2 = "cnct2";
+QString WAITM = "waitm";
+QString END =       "endgm";
+QString APP_PATH = "//Users//danielmalec//Desktop//sp//build-chess-Qt_6_1_3_for_macOS-Release//chess.app";
+QString STATUS_PATH = "//Users//danielmalec//Desktop//sp//ChessQT//game//status.txt";
+
 
 Game::Game(QWidget *parent): QMainWindow(parent), ui(new Ui::Game)
 {
@@ -11,80 +23,142 @@ Game::Game(QWidget *parent): QMainWindow(parent), ui(new Ui::Game)
     ui->textEdit->setReadOnly(true);
     ui->radioButton->click();
     ui->graphicsView->setScene(scene);
-    level = 4;
     userColor = white;
+
     start();
+    QTimer *timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+    timer->start(100);
 }
 
 void Game::start()
 {
     moves.clear();
-    writeMoves();
     while (!boards.empty()) boards.pop();
-    ui->label_2->setText(QString::number(level));
     board = new Board();
-    if (userColor == black){
-        Move m = {4, 1, 4, 2};
-        board->move(m);
-        if (userColor == black) m = {m.x1, 7 - m.y1, m.x2, 7 - m.y2};
-        moves.push_back(m);
-        writeMoves();
-        showBoard(true, m);
+
+    QString status = getStatus();
+    if (status == END){
+        userColor = white;
+        setStatus(CONNECT_1);
     }
-    else showBoard(true);
+    else if (status == CONNECT_1){
+        userColor = black;
+        ui->label_5->setText("Ход соперника");
+        setStatus(CONNECT_2);
+    }
+    else{
+        QApplication::quit();
+    }
+    showBoard(false);
     Board *nBoard = new Board();
     nBoard->copy(board);
     boards.push(nBoard);
+}
+
+
+void Game::update()
+{
+    QString status = getStatus();
+    if (userColor == white){
+        if (status == END){
+            QApplication::quit();
+        }
+        else if (status == CONNECT_1){
+            // wait
+        }
+        else if (status == CONNECT_2){
+            ui->label_5->setText("Ваш ход");
+            setStatus(WAITM);
+            showBoard(true);
+        }
+        else if (status == WAITM){
+            // wait
+        }
+        else{
+            if (status[4] == 'b'){
+                rivalMove(strToMove(status));
+            }
+            //ui->pushButton->setText("w" + QString::number(rand() % 10)  + "|" + status + "|" + QString::number(status.length()));
+        }
+    }
+    else{
+        if (status == END){
+            QApplication::quit();
+        }
+        else if (status == CONNECT_1){
+            // error
+        }
+        else if (status == CONNECT_2){
+            // wait
+        }
+        else if (status == WAITM){
+            // wait
+        }
+        else{
+            if (status[4] == 'w'){
+                rivalMove(strToMove(status));
+            }
+            //ui->pushButton->setText("b" +QString::number(rand() % 10)  + "|" + status + "|" + QString::number(status.length()));
+        }
+    }
 }
 
 void Game::slotFromPoint(){
-    for (int i = 0; i < 8; i++)
-        for (int j = 0; j < 8; j++)
-            if (figures[i][j]->wasMove) moves.push_back(figures[i][j]->move);
-    showBoard(false);
+    Move m;
+    for (int i = 0; i < 8; i++){
+        for (int j = 0; j < 8; j++){
+            if (figures[i][j]->wasMove) {
+                m = figures[i][j]->move;
+            }
+        }
+    }
+
+    showBoard(false, m, true);
+    moves.push_back(m);
     writeMoves();
-    QTimer::singleShot(100, this, SLOT(blackTurn()));
+    setStatus(moveToStr(m) + (userColor == white ? QString("w") : QString("b")));
+    ui->label_5->setText("Ход соперника");
+    checkEnd(m, true);
 }
 
-void Game::blackTurn()
+void Game::rivalMove(Move m)
+{
+    moves.push_back(m);
+    writeMoves();
+    if (userColor == black) m = {m.x1, 7 - m.y1, m.x2, 7 - m.y2};
+    board->move(m);
+    showBoard(true, m, false);
+    setStatus(WAITM);
+    ui->label_5->setText("Ваш ход");
+    checkEnd(m, false);
+}
+
+void Game::checkEnd(Move lm, bool my)
 {
     if (board->isMate(black)){
-        boards.push(new Board());
-        showBoard(0);
-        QMessageBox::information(this," ","Вы победили!\nШах и мат");
+        showBoard(false, lm, my);
+        ui->label_5->setText("Мат. Вы победили!");
         return;
     }
     if (board->isStalemate(black)){
-        boards.push(new Board());
-        showBoard(0);
-        QMessageBox::information(this," ","Ничья.\nВы поставили пат");
+        showBoard(false, lm, my);
+        ui->label_5->setText("Пат. Ничья.");
         return;
     }
-    Move m = board->solve(level);
-    board->move(m);
-    if (userColor == black) m = {m.x1, 7 - m.y1, m.x2, 7 - m.y2};
-    moves.push_back(m);
-    writeMoves();
-
-    Board *nBoard = new Board();
-    nBoard->copy(board);
-    boards.push(nBoard);
-
-    showBoard(true, m);
     if (board->isMate(white)){
-        showBoard(0, m);
-        QMessageBox::information(this," ","Вы проиграли.\nШах и мат");
+        showBoard(false, lm, my);
+        ui->label_5->setText("Мат. Вы проиграли.");
         return;
     }
     if (board->isStalemate(white)){
-        showBoard(0, m);
-        QMessageBox::information(this," ","Ничья.\nВам поставлен пат");
+        showBoard(false, lm);
+        ui->label_5->setText("Пат. Ничья.");
         return;
     }
-    if (board->isCheck(white)) QMessageBox::information(this,"","Шах!");
 }
 
-void Game::showBoard(bool allowMovement, Move lastMove)
+void Game::showBoard(bool allowMovement, Move lastMove, bool my)
 {
     scene->clear();
     scene->addRect(-430, -430, 860, 860, QPen(Qt::NoPen), QBrush(QColor("#634936")));
@@ -124,8 +198,9 @@ void Game::showBoard(bool allowMovement, Move lastMove)
             }
 
     Move m = lastMove;
-    if (userColor == black) m = {7 - m.x1, 7 - m.y1, 7 - m.x2, 7 - m.y2};
     if (m.x1 != -1){
+        if (userColor == black) m = {7 - m.x1, m.y1, 7 - m.x2, m.y2};
+        if (userColor == black && my) m = { m.x1,7 -m.y1,  m.x2, 7 -m.y2};
         if ((m.x1 + m.y1) % 2 == 0)
             scene->addRect(-400 + m.x1 * 100, -400 + m.y1 * 100, 100, 100,
                            QPen(Qt::red), QBrush(Qt::gray));
@@ -154,104 +229,70 @@ void Game::writeMoves()
     ui->textEdit->setText("");
     for (int i = 0; i < (int)moves.size(); i += 2){
         if (i + 1 == (int)moves.size())
-            ui->textEdit->append(QString::number(i / 2 + 1) + ".  "+ (QChar(moves[i].x1) + 'a') +
-                                 QString::number(8 - moves[i].y1) + "―" + (QChar(moves[i].x2) + 'a') +
-                                 QString::number(8 - moves[i].y2));
+            ui->textEdit->append(QString::number(i/2+1) + ".   " + moveToStr(moves[i]));
         else
-            ui->textEdit->append(QString::number(i / 2 + 1) + ".  "+ (QChar(moves[i].x1) + 'a') +
-                                QString::number(8 - moves[i].y1) + "―" + (QChar(moves[i].x2) + 'a') +
-                                QString::number(8 - moves[i].y2) + "   " +
-                                (QChar(moves[i + 1].x1) + 'a') +
-                                QString::number(8 - moves[i + 1].y1) + "―" +
-                                (QChar(moves[i + 1].x2) + 'a') +
-                                QString::number(8 - moves[i + 1].y2));
+            ui->textEdit->append(QString::number(i/2+1) + ".   " + moveToStr(moves[i]) + "    " + moveToStr(moves[i + 1]));
     }
-}
-
-
-void Game::on_pushButton_clicked()
-{
-    if (boards.size() > 1) {
-        boards.pop();
-        Figures pawnEnd = board->pawnEnd;
-        board->copy(boards.top());
-        board->pawnEnd = pawnEnd;
-        moves.pop_back();
-        moves.pop_back();
-        writeMoves();
-        showBoard(true);
-    }
-}
-
-void Game::on_radioButton_clicked()
-{
-    board->pawnEnd = queen;
-}
-
-void Game::on_radioButton_2_clicked()
-{
-    board->pawnEnd = rook;
-}
-
-void Game::on_radioButton_3_clicked()
-{
-    board->pawnEnd = bishop;
-}
-
-void Game::on_radioButton_4_clicked()
-{
-    board->pawnEnd = knight;
-}
-
-void Game::on_pushButton_2_clicked()
-{
-    level = 1;
-    start();
-}
-
-void Game::on_pushButton_3_clicked()
-{
-    level = 2;
-    start();
-}
-
-void Game::on_pushButton_4_clicked()
-{
-    level = 3;
-    start();
-}
-
-void Game::on_pushButton_5_clicked()
-{
-    level = 4;
-    start();
-}
-
-void Game::on_pushButton_6_clicked()
-{
-    level = 5;
-    start();
-}
-
-void Game::on_pushButton_7_clicked()
-{
-    level = 6;
-    start();
-}
-
-void Game::on_pushButton_8_clicked()
-{
-    userColor = white;
-    start();
-}
-
-void Game::on_pushButton_9_clicked()
-{
-    userColor = black;
-    start();
 }
 
 Game::~Game()
 {
     delete ui;
 }
+
+void Game::on_pushButton_clicked()
+{
+    QProcess *process = new QProcess(this);
+    process->start(APP_PATH);
+}
+
+
+QString Game::getStatus()
+{
+    QFile file(STATUS_PATH);
+    if ( file.open(QIODevice::ReadWrite) )
+    {
+        QTextStream stream(&file);
+        return stream.readLine();
+    }
+    return "error";
+}
+
+void Game::setStatus(QString s){
+    QFile file(STATUS_PATH);
+    if ( file.open(QFile::WriteOnly | QFile::Truncate) )
+    {
+        QTextStream stream(&file);
+        stream << s;
+        stream.flush();
+    }
+}
+
+void Game::closeEvent (QCloseEvent *event)
+{
+    setStatus(END);
+    event->accept();
+}
+
+
+Move Game::strToMove(QString s)
+{
+    return {s[0].unicode() - 'a',
+            (8 - (s[1].unicode() - '0')),
+            s[2].unicode() - 'a',
+            (8 - (s[3].unicode() - '0'))};
+}
+
+QString Game::moveToStr(Move m)
+{
+    return QString("") +
+           QChar(m.x1+ 'a') +
+           QChar(8 - m.y1 + '0') +
+           QChar(m.x2 + 'a') +
+           QChar(8 - m.y2 + '0');
+}
+
+
+
+
+

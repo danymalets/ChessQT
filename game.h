@@ -35,26 +35,24 @@ public:
 
     void start();
 
-    void writeMoves();
-    void showBoard(bool allowMovement, Move lastMove = {-1,-1,-1,-1});
+    QString getStatus();
+    void setStatus(QString s);
 
+    void writeMoves();
+
+    void rivalMove(Move m);
+
+    Move strToMove(QString s);
+    QString moveToStr(Move m);
+
+    void closeEvent(QCloseEvent *event);
+    void showBoard(bool allowMovement, Move lastMove = {-1, -1, -1, -1}, bool my = false);
+    void checkEnd(Move lm, bool my);
 private slots:
     void slotFromPoint();
-    void blackTurn();
+    void update();
 
     void on_pushButton_clicked();
-    void on_radioButton_clicked();
-    void on_radioButton_2_clicked();
-    void on_radioButton_3_clicked();
-    void on_radioButton_4_clicked();
-    void on_pushButton_2_clicked();
-    void on_pushButton_3_clicked();
-    void on_pushButton_4_clicked();
-    void on_pushButton_5_clicked();
-    void on_pushButton_6_clicked();
-    void on_pushButton_7_clicked();
-    void on_pushButton_8_clicked();
-    void on_pushButton_9_clicked();
 };
 
 #endif // GAME_H
